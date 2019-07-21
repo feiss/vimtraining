@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>VimSnake</title>
+  <title>Vim Training</title>
   <style>
     body {
       background-color: #222;
@@ -43,7 +43,6 @@ can.height = H * sw;
 var c = can.getContext('2d');
 
 c.strokeStyle = 'white';
-
 var useHint = document.getElementById('usehint');
 
 var interval = 0;
@@ -54,8 +53,9 @@ var key = [];
 
 
 function findItemAt(x, y){
-  for(let i = 0; i < items.length; i++) 
-    if (items[i].x == x && items[i].y == y) return items[i].type;
+  for(let i = 0; i < items.length; i++) {
+    if (items[i].x == x && items[i].y == y) { return items[i].type; }
+  }
   return false;
 }
 
