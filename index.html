@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VimSnake</title>
+  <style>
+    body {
+      background-color: #222;
+      font: 14px sans-serif;
+      color: #fff;
+    }
+    canvas {
+      display: block;
+      margin: 1em auto;
+    }
+    p {
+      text-align: center;
+    }
+    label {
+      color: #7cf;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="can"></canvas>
+  <p>
+    Use arrow keys or HJKL keys for training vim movements. Press R to restart.
+    <label><input type="checkbox" id="usehint">Show key states</label>
+  </p>
+<script>
+
+const W = 50;
+const H = 30;
+var sw = 20;
+var sx = W / 2;
+var sy = H / 2;
+var dx = dy = 0;
+var can = document.getElementById('can');
+can.style.width = (W * sw) + 'px';
+can.style.height = (H * sw) + 'px';
+can.width = W * sw;
+can.height = H * sw;
+var c = can.getContext('2d');
+
+c.strokeStyle = 'white';
+
+var useHint = document.getElementById('usehint');
+
+var interval = 0;
+var level = 0;
+var itemsleft = 0;
+var items = [];
+var key = [];
+
+
+function findItemAt(x, y){
+  for(let i = 0; i < items.length; i++) 
+    if (items[i].x == x && items[i].y == y) return items[i].type;
+  return false;
+}
+
+function startLevel(l) {
+  level = l === undefined ? level : l;
+  items.length = 0;
+  const numitems = 50 + level * 4;
+  itemsleft = 5 + level;
+  for (let i = 0; i < numitems; i++) {
+    let item = { 
+      x: Math.floor(Math.random() * W), 
+      y: Math.floor(Math.random() * H),
+      type: i >= numitems  - itemsleft ? 'food' : 'wall'
+    };
+    if (findItemAt(item.x, item.y) !== false) { i--; }
+    else { items.push(item); }
+  }
+
+  dx = dy = 0;  
+  sx = W / 2;
+  sy = H / 2;
+  clearInterval(interval);
+  interval = setInterval(loop, 150 - level * 4);
+}
+
+startLevel();
+
+
+document.body.addEventListener('keydown', onKeyDown);
+
+function onKeyDown(ev) {
+  switch(ev.keyCode){
+    case 72: case 37: dx = -1; dy = 0; key[0] = true;  break;
+    case 74: case 40: dx = 0; dy = 1; key[1] = true; break;
+    case 75: case 38: dx = 0; dy = -1; key[2] = true; break;
+    case 76: case 39: dx = 1; dy = 0; key[3] = true;  break;
+    case 82: startLevel(); break;
+  }
+}
+
+function loop(){
+  sx += dx;
+  sy += dy;
+  if (dx > 0 && sx >= W) sx = 0;
+  if (dx < 0 && sx < 0) sx = W-1;
+  if (dy > 0 && sy >= H) sy = 0;
+  if (dy < 0 && sy < 0) sy = H-1;
+
+  let collided = false;
+
+
+  c.globalAlpha = 0.2;
+  c.fillStyle = 'black';
+  c.fillRect(0, 0, W * sw, H * sw);
+  c.globalAlpha = 1;
+
+  for(var i = 0; i< items.length; i++) {
+    if (sx == items[i].x && sy == items[i].y) {
+      if (items[i].type == 'wall') gameOver();
+      if (items[i].type == 'food') {
+        itemsleft --;
+        if (itemsleft == 0) {
+          level ++;
+          startLevel();
+        }
+      }
+      items.splice(i, 1);
+      collided = true;
+      break;
+    }
+
+    c.fillStyle = items[i].type == 'food' ? 'green': 'blue';
+    c.fillRect(items[i].x * sw, items[i].y * sw, sw, sw);
+  }
+
+  // draw snake
+  c.fillStyle = collided ? 'yellow' : 'red';
+  c.fillRect(sx * sw, sy * sw, sw, sw);
+
+  // score
+  c.fillStyle = "white";
+  c.font = '20px sans-serif';
+  c.fillText(`LEVEL: ${level}   ITEMS LEFT: ${itemsleft}`, 10, 20);
+
+  // hint
+  if (useHint.checked) {
+    c.fillStyle = 'white';
+    c.globalAlpha = 0.3;
+    c.strokeRect(350, 20, 50, 50);
+    c.strokeRect(400, 20, 50, 50);
+    c.strokeRect(450, 20, 50, 50);
+    c.strokeRect(500, 20, 50, 50);
+    triangle(375, 45, -Math.PI/2, key[0]);
+    triangle(425, 45, Math.PI, key[1]);
+    triangle(475, 45, 0, key[2]);
+    triangle(525, 45, Math.PI/2, key[3]);
+    key= key.map(k=>k=false);
+  }
+}
+
+function triangle(x, y, rot, filled) {
+  c.save();
+  c.translate(x, y);
+  c.rotate(rot);
+  c.beginPath();
+  c.moveTo(0, -15);
+  c.lineTo(15, 15);
+  c.lineTo(-15, 15);
+  c.lineTo(0, -15);
+  if (filled) {
+    c.globalAlpha = 1;
+    c.fill(); 
+  }
+  else c.stroke();
+  c.restore();
+}
+
+
+function gameOver() {
+  clearInterval(interval);
+  c.fillStyle = "white";
+  c.font = '40px sans-serif';
+  c.fillText('GAME OVER', 300, H * sw / 2);
+}
+
+</script>
+</body>
+</html>
